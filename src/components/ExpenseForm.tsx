@@ -22,7 +22,9 @@ export interface ExpenseData {
   invoiceNo: string;
   vendor: string;
   purpose: string;
+  customPurpose?: string;
   category: string;
+  customCategory?: string;
   amount: number;
   paymentMethod: string;
 }
@@ -45,7 +47,15 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
       toast.error("Sila isi semua maklumat yang diperlukan");
       return;
     }
-    onSubmit(formData);
+
+    // Gunakan nilai custom jika "other" dipilih
+    const submissionData = {
+      ...formData,
+      purpose: formData.purpose === "other" ? formData.customPurpose || "Lain-lain" : formData.purpose,
+      category: formData.category === "other" ? formData.customCategory || "Lain-lain" : formData.category,
+    };
+
+    onSubmit(submissionData);
     setFormData({
       name: "",
       date: "",
@@ -115,7 +125,7 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
           <Select
             value={formData.purpose}
             onValueChange={(value) =>
-              setFormData({ ...formData, purpose: value })
+              setFormData({ ...formData, purpose: value, customPurpose: "" })
             }
           >
             <SelectTrigger className="w-full bg-white">
@@ -128,6 +138,16 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
               <SelectItem value="other">Lain-lain</SelectItem>
             </SelectContent>
           </Select>
+          {formData.purpose === "other" && (
+            <Input
+              className="mt-2"
+              placeholder="Nyatakan tujuan lain"
+              value={formData.customPurpose || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, customPurpose: e.target.value })
+              }
+            />
+          )}
         </div>
 
         <div className="space-y-2">
@@ -135,7 +155,7 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
           <Select
             value={formData.category}
             onValueChange={(value) =>
-              setFormData({ ...formData, category: value })
+              setFormData({ ...formData, category: value, customCategory: "" })
             }
           >
             <SelectTrigger className="w-full bg-white">
@@ -149,6 +169,16 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
               <SelectItem value="other">Lain-lain</SelectItem>
             </SelectContent>
           </Select>
+          {formData.category === "other" && (
+            <Input
+              className="mt-2"
+              placeholder="Nyatakan kategori lain"
+              value={formData.customCategory || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, customCategory: e.target.value })
+              }
+            />
+          )}
         </div>
 
         <div className="space-y-2">
