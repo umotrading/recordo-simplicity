@@ -4,9 +4,12 @@ import { TransactionHistory } from "@/components/TransactionHistory";
 import { PettyCashTopUp, TopUpData } from "@/components/PettyCashTopUp";
 import { TopUpHistory } from "@/components/TopUpHistory";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { toast } from "sonner";
 
 const Index = () => {
-  const [balance, setBalance] = useState(0); // Nilai awal ditukar kepada 0
+  const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<ExpenseData[]>([]);
   const [topUps, setTopUps] = useState<TopUpData[]>([]);
 
@@ -21,21 +24,75 @@ const Index = () => {
     setBalance(balance + amount);
   };
 
+  const exportToCSV = () => {
+    // Header untuk fail CSV
+    const headers = [
+      "Nama Perekod",
+      "Tarikh",
+      "No. Invoice",
+      "Kedai/Pembekal",
+      "Tujuan",
+      "Kategori",
+      "Jumlah (RM)",
+      "Kaedah Pembayaran",
+    ].join(",");
+
+    // Tukar data transaksi kepada format CSV
+    const csvRows = transactions.map((t) => {
+      return [
+        t.name,
+        t.date,
+        t.invoiceNo,
+        t.vendor,
+        t.purpose === "other" ? t.customPurpose : t.purpose,
+        t.category === "other" ? t.customCategory : t.category,
+        t.amount.toFixed(2),
+        t.paymentMethod,
+      ]
+        .map((value) => `"${value}"`)
+        .join(",");
+    });
+
+    // Gabungkan header dan data
+    const csvContent = [headers, ...csvRows].join("\n");
+
+    // Buat fail CSV dan muat turun
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `transaksi_${new Date().toLocaleDateString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Fail CSV berjaya dimuat turun");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Sistem Rekod Ladang</h1>
-          <Card className="w-auto">
-            <CardHeader className="py-2">
-              <CardTitle className="text-lg">Baki Petty Cash</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-primary">
-                RM {balance.toFixed(2)}
-              </p>
-            </CardContent>
-          </Card>
+          <div className="flex gap-4 items-center">
+            <Button
+              onClick={exportToCSV}
+              className="flex items-center gap-2"
+              variant="outline"
+            >
+              <Download className="w-4 h-4" />
+              Muat Turun CSV
+            </Button>
+            <Card className="w-auto">
+              <CardHeader className="py-2">
+                <CardTitle className="text-lg">Baki Petty Cash</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold text-primary">
+                  RM {balance.toFixed(2)}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <Card>
