@@ -20,6 +20,7 @@ export type Database = {
           name: string
           payment_method: string
           purpose: string
+          receipt_url: string | null
           vendor: string | null
         }
         Insert: {
@@ -32,6 +33,7 @@ export type Database = {
           name: string
           payment_method: string
           purpose: string
+          receipt_url?: string | null
           vendor?: string | null
         }
         Update: {
@@ -44,6 +46,7 @@ export type Database = {
           name?: string
           payment_method?: string
           purpose?: string
+          receipt_url?: string | null
           vendor?: string | null
         }
         Relationships: []

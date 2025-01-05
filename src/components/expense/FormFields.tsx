@@ -161,6 +161,22 @@ export function FormFields({ formData, setFormData }: FormFieldsProps) {
           </SelectContent>
         </Select>
       </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="receipt">Muat Naik Resit</Label>
+        <Input
+          id="receipt"
+          type="file"
+          accept="image/*,.pdf"
+          onChange={(e) =>
+            setFormData({ ...formData, receipt: e.target.files?.[0] })
+          }
+          className="cursor-pointer"
+        />
+        <p className="text-sm text-gray-500">
+          Sila muat naik resit atau bukti pembayaran (Gambar atau PDF)
+        </p>
+      </div>
     </div>
   );
 }

@@ -9,6 +9,7 @@ export interface ExpenseData {
   customCategory?: string;
   amount: number;
   paymentMethod: string;
+  receipt?: File;
 }
 
 export interface ExpenseFormProps {
