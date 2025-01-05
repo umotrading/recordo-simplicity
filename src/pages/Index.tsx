@@ -28,7 +28,19 @@ const Index = () => {
         throw error;
       }
       
-      return data || [];
+      // Transform the data to match ExpenseData interface
+      return (data || []).map(expense => ({
+        name: expense.name,
+        date: expense.date,
+        invoiceNo: expense.invoice_no || "",
+        vendor: expense.vendor || "",
+        purpose: expense.purpose,
+        category: expense.category,
+        amount: Number(expense.amount),
+        paymentMethod: expense.payment_method,
+        customPurpose: expense.purpose === "other" ? expense.purpose : undefined,
+        customCategory: expense.category === "other" ? expense.category : undefined,
+      }));
     },
   });
 
@@ -125,12 +137,12 @@ const Index = () => {
       return [
         t.name,
         t.date,
-        t.invoice_no,
+        t.invoiceNo,
         t.vendor,
         t.purpose,
         t.category,
         Number(t.amount).toFixed(2),
-        t.payment_method,
+        t.paymentMethod,
       ]
         .map((value) => `"${value}"`)
         .join(",");
