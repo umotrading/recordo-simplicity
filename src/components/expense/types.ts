@@ -10,6 +10,7 @@ export interface ExpenseData {
   amount: number;
   paymentMethod: string;
   receipt?: File;
+  receipt_url?: string;  // Added this line to fix the TypeScript error
 }
 
 export interface ExpenseFormProps {
