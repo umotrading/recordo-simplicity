@@ -6,7 +6,7 @@ import { TopUpHistory } from "@/components/TopUpHistory";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Index = () => {
-  const [balance, setBalance] = useState(1000);
+  const [balance, setBalance] = useState(0); // Nilai awal ditukar kepada 0
   const [transactions, setTransactions] = useState<ExpenseData[]>([]);
   const [topUps, setTopUps] = useState<TopUpData[]>([]);
 
