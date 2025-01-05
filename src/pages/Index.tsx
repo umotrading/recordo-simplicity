@@ -126,15 +126,12 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-2">
             <Leaf className="w-6 h-6 text-green-600" />
             <h1 className="text-2xl font-bold text-gray-800">Rekod Ladang GMP</h1>
           </div>
-          <div className="flex gap-4 items-center">
-            <ExportButton transactions={transactions} />
-            <BalanceDisplay balance={balance} />
-          </div>
+          <BalanceDisplay balance={balance} />
         </div>
 
         <DailySummary transactions={transactions} balance={balance} />
@@ -160,6 +157,11 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <TopUpHistory topUps={topUps} />
           <TransactionHistory transactions={transactions} />
+        </div>
+
+        {/* Export button moved to bottom */}
+        <div className="fixed bottom-4 right-4 z-10">
+          <ExportButton transactions={transactions} />
         </div>
       </div>
     </div>

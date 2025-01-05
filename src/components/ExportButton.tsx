@@ -50,8 +50,8 @@ export function ExportButton({ transactions }: ExportButtonProps) {
   return (
     <Button
       onClick={exportToCSV}
-      className="flex items-center gap-2"
-      variant="outline"
+      className="flex items-center gap-2 shadow-lg"
+      size="lg"
     >
       <Download className="w-4 h-4" />
       Muat Turun CSV
