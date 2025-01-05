@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ExpenseForm, ExpenseData } from "@/components/ExpenseForm";
 import { TransactionHistory } from "@/components/TransactionHistory";
 import { PettyCashTopUp, TopUpData } from "@/components/PettyCashTopUp";
@@ -7,25 +7,109 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const Index = () => {
+  const queryClient = useQueryClient();
   const [balance, setBalance] = useState(0);
-  const [transactions, setTransactions] = useState<ExpenseData[]>([]);
-  const [topUps, setTopUps] = useState<TopUpData[]>([]);
+
+  // Fetch expenses
+  const { data: transactions = [] } = useQuery({
+    queryKey: ["expenses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("*")
+        .order("date", { ascending: false });
+      
+      if (error) {
+        toast.error("Ralat semasa mengambil data perbelanjaan");
+        throw error;
+      }
+      
+      return data || [];
+    },
+  });
+
+  // Fetch top-ups
+  const { data: topUps = [] } = useQuery({
+    queryKey: ["topUps"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("top_ups")
+        .select("*")
+        .order("date", { ascending: false });
+      
+      if (error) {
+        toast.error("Ralat semasa mengambil data tambahan baki");
+        throw error;
+      }
+      
+      return data || [];
+    },
+  });
+
+  // Calculate balance
+  useEffect(() => {
+    const totalTopUps = topUps.reduce((sum, topUp) => sum + Number(topUp.amount), 0);
+    const totalExpenses = transactions.reduce((sum, expense) => sum + Number(expense.amount), 0);
+    setBalance(totalTopUps - totalExpenses);
+  }, [topUps, transactions]);
+
+  // Add expense mutation
+  const addExpenseMutation = useMutation({
+    mutationFn: async (data: ExpenseData) => {
+      const { error } = await supabase.from("expenses").insert({
+        name: data.name,
+        date: data.date,
+        invoice_no: data.invoiceNo,
+        vendor: data.vendor,
+        purpose: data.purpose === "other" ? data.customPurpose : data.purpose,
+        category: data.category === "other" ? data.customCategory : data.category,
+        amount: data.amount,
+        payment_method: data.paymentMethod,
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      toast.success("Rekod berjaya disimpan");
+    },
+    onError: () => {
+      toast.error("Ralat semasa menyimpan rekod");
+    },
+  });
+
+  // Add top-up mutation
+  const addTopUpMutation = useMutation({
+    mutationFn: async (data: { amount: number; date: string }) => {
+      const { error } = await supabase.from("top_ups").insert({
+        amount: data.amount,
+        date: data.date,
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["topUps"] });
+      toast.success("Baki berjaya ditambah");
+    },
+    onError: () => {
+      toast.error("Ralat semasa menambah baki");
+    },
+  });
 
   const handleExpenseSubmit = (data: ExpenseData) => {
-    setTransactions([data, ...transactions]);
-    setBalance(balance - data.amount);
+    addExpenseMutation.mutate(data);
   };
 
   const handleTopUp = (amount: number, date: string) => {
-    const topUpData = { amount, date };
-    setTopUps([topUpData, ...topUps]);
-    setBalance(balance + amount);
+    addTopUpMutation.mutate({ amount, date });
   };
 
   const exportToCSV = () => {
-    // Header untuk fail CSV
     const headers = [
       "Nama Perekod",
       "Tarikh",
@@ -37,26 +121,22 @@ const Index = () => {
       "Kaedah Pembayaran",
     ].join(",");
 
-    // Tukar data transaksi kepada format CSV
     const csvRows = transactions.map((t) => {
       return [
         t.name,
         t.date,
-        t.invoiceNo,
+        t.invoice_no,
         t.vendor,
-        t.purpose === "other" ? t.customPurpose : t.purpose,
-        t.category === "other" ? t.customCategory : t.category,
-        t.amount.toFixed(2),
-        t.paymentMethod,
+        t.purpose,
+        t.category,
+        Number(t.amount).toFixed(2),
+        t.payment_method,
       ]
         .map((value) => `"${value}"`)
         .join(",");
     });
 
-    // Gabungkan header dan data
     const csvContent = [headers, ...csvRows].join("\n");
-
-    // Buat fail CSV dan muat turun
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -111,7 +191,7 @@ const Index = () => {
                         new Date(t.date).toDateString() ===
                         new Date().toDateString()
                     )
-                    .reduce((acc, curr) => acc + curr.amount, 0)
+                    .reduce((acc, curr) => acc + Number(curr.amount), 0)
                     .toFixed(2)}
                 </p>
               </div>
