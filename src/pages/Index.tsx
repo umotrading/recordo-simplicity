@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BalanceDisplay } from "@/components/BalanceDisplay";
 import { DailySummary } from "@/components/DailySummary";
 import { ExportButton } from "@/components/ExportButton";
+import { Leaf } from "lucide-react";
 
 const Index = () => {
   const queryClient = useQueryClient();
@@ -126,7 +127,10 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Sistem Rekod Ladang</h1>
+          <div className="flex items-center gap-2">
+            <Leaf className="w-6 h-6 text-green-600" />
+            <h1 className="text-2xl font-bold text-gray-800">Rekod Ladang GMP</h1>
+          </div>
           <div className="flex gap-4 items-center">
             <ExportButton transactions={transactions} />
             <BalanceDisplay balance={balance} />
