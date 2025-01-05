@@ -1,16 +1,24 @@
 import { useState } from "react";
 import { ExpenseForm, ExpenseData } from "@/components/ExpenseForm";
 import { TransactionHistory } from "@/components/TransactionHistory";
+import { PettyCashTopUp, TopUpData } from "@/components/PettyCashTopUp";
+import { TopUpHistory } from "@/components/TopUpHistory";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Index = () => {
-  const [balance, setBalance] = useState(1000); // Baki awal RM1000
+  const [balance, setBalance] = useState(1000);
   const [transactions, setTransactions] = useState<ExpenseData[]>([]);
+  const [topUps, setTopUps] = useState<TopUpData[]>([]);
 
   const handleExpenseSubmit = (data: ExpenseData) => {
-    // In a real app, this would send data to Google Sheets
     setTransactions([data, ...transactions]);
     setBalance(balance - data.amount);
+  };
+
+  const handleTopUp = (amount: number, date: string) => {
+    const topUpData = { amount, date };
+    setTopUps([topUpData, ...topUps]);
+    setBalance(balance + amount);
   };
 
   return (
@@ -60,6 +68,15 @@ const Index = () => {
 
         <Card>
           <CardHeader>
+            <CardTitle>Tambah Baki Petty Cash</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PettyCashTopUp onTopUp={handleTopUp} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Tambah Rekod Baru</CardTitle>
           </CardHeader>
           <CardContent>
@@ -67,7 +84,10 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        <TransactionHistory transactions={transactions} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <TopUpHistory topUps={topUps} />
+          <TransactionHistory transactions={transactions} />
+        </div>
       </div>
     </div>
   );
