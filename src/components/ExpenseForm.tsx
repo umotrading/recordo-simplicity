@@ -118,10 +118,10 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
               setFormData({ ...formData, purpose: value })
             }
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full bg-white">
               <SelectValue placeholder="Pilih Tujuan" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white z-50">
               <SelectItem value="office">Keperluan Pejabat</SelectItem>
               <SelectItem value="travel">Perjalanan</SelectItem>
               <SelectItem value="meals">Makan Minum</SelectItem>
@@ -138,10 +138,10 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
               setFormData({ ...formData, category: value })
             }
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full bg-white">
               <SelectValue placeholder="Pilih Kategori" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white z-50">
               <SelectItem value="supplies">Alat Tulis</SelectItem>
               <SelectItem value="equipment">Peralatan</SelectItem>
               <SelectItem value="transport">Pengangkutan</SelectItem>
@@ -173,10 +173,10 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
               setFormData({ ...formData, paymentMethod: value })
             }
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full bg-white">
               <SelectValue placeholder="Pilih Kaedah" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white z-50">
               <SelectItem value="cash">Tunai</SelectItem>
               <SelectItem value="transfer">Pemindahan Bank</SelectItem>
               <SelectItem value="card">Kad Kredit/Debit</SelectItem>
