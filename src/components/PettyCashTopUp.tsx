@@ -6,12 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 interface PettyCashTopUpProps {
-  onTopUp: (amount: number, date: string) => void;
+  onTopUp: (amount: number, date: string, notes: string) => void;
 }
 
 export interface TopUpData {
   amount: number;
   date: string;
+  notes?: string;
 }
 
 export function PettyCashTopUp({ onTopUp }: PettyCashTopUpProps) {
@@ -25,7 +26,7 @@ export function PettyCashTopUp({ onTopUp }: PettyCashTopUpProps) {
       toast.error("Sila isi semua maklumat yang diperlukan");
       return;
     }
-    onTopUp(amount, date);
+    onTopUp(amount, date, notes);
     setAmount(0);
     setDate("");
     setNotes("");

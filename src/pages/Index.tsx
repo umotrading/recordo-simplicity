@@ -97,10 +97,11 @@ const Index = () => {
 
   // Add top-up mutation
   const addTopUpMutation = useMutation({
-    mutationFn: async (data: { amount: number; date: string }) => {
+    mutationFn: async (data: { amount: number; date: string; notes: string }) => {
       const { error } = await supabase.from("top_ups").insert({
         amount: data.amount,
         date: data.date,
+        notes: data.notes,
       });
 
       if (error) throw error;
@@ -118,8 +119,8 @@ const Index = () => {
     addExpenseMutation.mutate(data);
   };
 
-  const handleTopUp = (amount: number, date: string) => {
-    addTopUpMutation.mutate({ amount, date });
+  const handleTopUp = (amount: number, date: string, notes: string) => {
+    addTopUpMutation.mutate({ amount, date, notes });
   };
 
   return (

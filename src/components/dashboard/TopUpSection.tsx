@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PettyCashTopUp } from "@/components/PettyCashTopUp";
 
 interface TopUpSectionProps {
-  onTopUp: (amount: number, date: string) => void;
+  onTopUp: (amount: number, date: string, notes: string) => void;
 }
 
 export function TopUpSection({ onTopUp }: TopUpSectionProps) {
