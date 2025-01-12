@@ -18,6 +18,7 @@ export function ExportButton({ transactions }: ExportButtonProps) {
       "Kategori",
       "Jumlah (RM)",
       "Kaedah Pembayaran",
+      "Link Resit",  // Added new column for receipt URL
     ].join(",");
 
     const csvRows = transactions.map((t) => {
@@ -30,6 +31,7 @@ export function ExportButton({ transactions }: ExportButtonProps) {
         t.category,
         Number(t.amount).toFixed(2),
         t.paymentMethod,
+        t.receipt_url || "",  // Added receipt URL to the CSV data
       ]
         .map((value) => `"${value}"`)
         .join(",");
@@ -51,7 +53,7 @@ export function ExportButton({ transactions }: ExportButtonProps) {
     <Button
       onClick={exportToCSV}
       className="flex items-center gap-2 shadow-lg"
-      size="sm" // Tukar dari 'lg' ke 'sm'
+      size="sm"
     >
       <Download className="w-4 h-4" />
       <span className="hidden sm:inline">Muat Turun CSV</span>
