@@ -19,6 +19,7 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
     paymentMethod: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,10 +95,48 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
     }
   };
 
+  const handleSyncAllToGDrive = async () => {
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-all-to-drive');
+      
+      if (error) {
+        console.error('Error syncing files:', error);
+        toast.error("Ralat semasa memuat naik fail ke Google Drive");
+        return;
+      }
+
+      if (data.results) {
+        const successCount = data.results.filter((r: any) => r.status === 'success').length;
+        const errorCount = data.results.filter((r: any) => r.status === 'error').length;
+        
+        if (successCount > 0) {
+          toast.success(`${successCount} fail berjaya dimuat naik ke Google Drive`);
+        }
+        if (errorCount > 0) {
+          toast.error(`${errorCount} fail gagal dimuat naik`);
+        }
+      }
+    } catch (error) {
+      console.error('Error calling sync-all-to-drive function:', error);
+      toast.error("Ralat semasa memuat naik ke Google Drive");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <FormFields formData={formData} setFormData={setFormData} />
-      <div className="flex justify-end space-x-4">
+      <div className="flex justify-between items-center space-x-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleSyncAllToGDrive}
+          disabled={isSyncing}
+        >
+          {isSyncing ? "Sedang memuat naik..." : "Muat Naik Semua Resit ke Google Drive"}
+        </Button>
         <Button
           type="submit"
           className="bg-primary hover:bg-primary-hover text-primary-foreground"
