@@ -66,7 +66,16 @@ export function ExportButton({ transactions, topUps }: ExportButtonProps) {
         .join(",");
     });
 
-    const csvContent = [headers, ...expenseRows, ...topUpRows].join("\n");
+    // Combine all rows and create CSV content
+    const allRows = [...expenseRows, ...topUpRows];
+    // Sort rows by date in descending order (newest first)
+    allRows.sort((a, b) => {
+      const dateA = a.split(",")[2].replace(/"/g, "");
+      const dateB = b.split(",")[2].replace(/"/g, "");
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+
+    const csvContent = [headers, ...allRows].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
