@@ -13,6 +13,7 @@ serve(async (req) => {
   }
 
   try {
+    // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -25,6 +26,7 @@ serve(async (req) => {
       .list()
 
     if (listError) {
+      console.error('Error listing files:', listError)
       throw new Error(`Failed to list files: ${listError.message}`)
     }
 
