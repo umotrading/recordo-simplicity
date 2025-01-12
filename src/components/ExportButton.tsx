@@ -2,14 +2,17 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { ExpenseData } from "./expense/types";
+import { TopUpData } from "./PettyCashTopUp";
 
 interface ExportButtonProps {
   transactions: ExpenseData[];
+  topUps: TopUpData[];
 }
 
-export function ExportButton({ transactions }: ExportButtonProps) {
+export function ExportButton({ transactions, topUps }: ExportButtonProps) {
   const exportToCSV = () => {
     const headers = [
+      "Jenis",
       "Nama Perekod",
       "Tarikh",
       "No. Invoice",
@@ -19,15 +22,16 @@ export function ExportButton({ transactions }: ExportButtonProps) {
       "Jumlah (RM)",
       "Kaedah Pembayaran",
       "Link Resit",
-      "Nota",  // Added notes header
+      "Nota",
     ].join(",");
 
-    const csvRows = transactions.map((t) => {
-      // Ensure the receipt_url and notes are included, use empty string if undefined
+    // Format expense transactions
+    const expenseRows = transactions.map((t) => {
       const receiptUrl = t.receipt_url || "";
-      const notes = t.notes || "";  // Added notes field
+      const notes = t.notes || "";
       
       return [
+        "Perbelanjaan",
         t.name,
         t.date,
         t.invoiceNo,
@@ -37,13 +41,32 @@ export function ExportButton({ transactions }: ExportButtonProps) {
         Number(t.amount).toFixed(2),
         t.paymentMethod,
         receiptUrl,
-        notes,  // Include the notes in the CSV
+        notes,
       ]
         .map((value) => `"${value}"`)
         .join(",");
     });
 
-    const csvContent = [headers, ...csvRows].join("\n");
+    // Format top-up transactions
+    const topUpRows = topUps.map((t) => {
+      return [
+        "Tambah Baki",
+        "-",
+        t.date,
+        "-",
+        "-",
+        "Tambah Baki Petty Cash",
+        "-",
+        Number(t.amount).toFixed(2),
+        "-",
+        "-",
+        t.notes || "",
+      ]
+        .map((value) => `"${value}"`)
+        .join(",");
+    });
+
+    const csvContent = [headers, ...expenseRows, ...topUpRows].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);

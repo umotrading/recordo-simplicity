@@ -14,7 +14,6 @@ const Index = () => {
   const queryClient = useQueryClient();
   const [balance, setBalance] = useState(0);
 
-  // Fetch expenses
   const { data: transactions = [] } = useQuery({
     queryKey: ["expenses"],
     queryFn: async () => {
@@ -133,7 +132,7 @@ const Index = () => {
         <HistorySection topUps={topUps} transactions={transactions} />
         
         <div className="fixed bottom-4 right-4 z-10">
-          <ExportButton transactions={transactions} />
+          <ExportButton transactions={transactions} topUps={topUps} />
         </div>
       </div>
     </div>
