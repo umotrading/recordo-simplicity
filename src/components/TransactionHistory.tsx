@@ -10,6 +10,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { FormFields } from "./expense/FormFields";
 
@@ -19,7 +21,9 @@ interface TransactionHistoryProps {
 
 export function TransactionHistory({ transactions }: TransactionHistoryProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<ExpenseData | null>(null);
+  const [deletingTransaction, setDeletingTransaction] = useState<ExpenseData | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleEdit = (transaction: ExpenseData) => {
@@ -27,17 +31,20 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = async (transaction: ExpenseData) => {
-    if (!window.confirm("Adakah anda pasti untuk memadam rekod ini?")) {
-      return;
-    }
+  const handleDeleteClick = (transaction: ExpenseData) => {
+    setDeletingTransaction(transaction);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deletingTransaction) return;
 
     setIsDeleting(true);
     try {
       const { error } = await supabase
         .from("expenses")
         .delete()
-        .eq("invoice_no", transaction.invoiceNo);
+        .eq("invoice_no", deletingTransaction.invoiceNo);
 
       if (error) throw error;
 
@@ -49,6 +56,8 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
       toast.error("Ralat semasa memadam rekod");
     } finally {
       setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+      setDeletingTransaction(null);
     }
   };
 
@@ -151,21 +160,21 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
                 <div className="flex justify-end gap-2 mt-2">
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="xs"
                     onClick={() => handleEdit(transaction)}
-                    className="flex items-center gap-1"
+                    className="flex items-center gap-1 h-7 px-2 text-xs"
                   >
-                    <Pencil size={16} />
+                    <Pencil size={12} />
                     Edit
                   </Button>
                   <Button
                     variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(transaction)}
+                    size="xs"
+                    onClick={() => handleDeleteClick(transaction)}
                     disabled={isDeleting}
-                    className="flex items-center gap-1"
+                    className="flex items-center gap-1 h-7 px-2 text-xs"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={12} />
                     Padam
                   </Button>
                 </div>
@@ -189,14 +198,33 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
               setFormData={(data) => setEditingTransaction(data)}
             />
           )}
-          <div className="flex justify-end gap-2">
+          <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Batal
             </Button>
             <Button onClick={() => editingTransaction && handleUpdate(editingTransaction)}>
               Simpan
             </Button>
-          </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Padam Rekod</DialogTitle>
+            <DialogDescription>
+              Adakah anda pasti untuk memadam rekod ini? Tindakan ini tidak boleh dibatalkan.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              Padam
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
