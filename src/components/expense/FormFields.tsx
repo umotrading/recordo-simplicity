@@ -16,7 +16,7 @@ interface FormFieldsProps {
 
 export function FormFields({ formData, setFormData }: FormFieldsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl mx-auto">
       <div className="space-y-2">
         <Label htmlFor="name">Nama Perekod</Label>
         <Input
@@ -26,6 +26,7 @@ export function FormFields({ formData, setFormData }: FormFieldsProps) {
             setFormData({ ...formData, name: e.target.value })
           }
           placeholder="Nama anda"
+          className="w-full"
         />
       </div>
 
@@ -38,6 +39,7 @@ export function FormFields({ formData, setFormData }: FormFieldsProps) {
           onChange={(e) =>
             setFormData({ ...formData, date: e.target.value })
           }
+          className="w-full"
         />
       </div>
 
@@ -50,6 +52,7 @@ export function FormFields({ formData, setFormData }: FormFieldsProps) {
             setFormData({ ...formData, invoiceNo: e.target.value })
           }
           placeholder="No. Invoice/Resit"
+          className="w-full"
         />
       </div>
 
@@ -62,6 +65,7 @@ export function FormFields({ formData, setFormData }: FormFieldsProps) {
             setFormData({ ...formData, vendor: e.target.value })
           }
           placeholder="Nama kedai atau pembekal"
+          className="w-full"
         />
       </div>
 
@@ -88,7 +92,7 @@ export function FormFields({ formData, setFormData }: FormFieldsProps) {
         </Select>
         {formData.purpose === "other" && (
           <Input
-            className="mt-2"
+            className="mt-2 w-full"
             placeholder="Nyatakan tujuan lain"
             value={formData.customPurpose || ""}
             onChange={(e) =>
@@ -119,7 +123,7 @@ export function FormFields({ formData, setFormData }: FormFieldsProps) {
         </Select>
         {formData.category === "other" && (
           <Input
-            className="mt-2"
+            className="mt-2 w-full"
             placeholder="Nyatakan kategori lain"
             value={formData.customCategory || ""}
             onChange={(e) =>
@@ -140,6 +144,7 @@ export function FormFields({ formData, setFormData }: FormFieldsProps) {
             setFormData({ ...formData, amount: parseFloat(e.target.value) })
           }
           placeholder="0.00"
+          className="w-full"
         />
       </div>
 
@@ -162,7 +167,7 @@ export function FormFields({ formData, setFormData }: FormFieldsProps) {
         </Select>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 md:col-span-2">
         <Label htmlFor="receipt">Muat Naik Resit</Label>
         <Input
           id="receipt"
@@ -171,7 +176,7 @@ export function FormFields({ formData, setFormData }: FormFieldsProps) {
           onChange={(e) =>
             setFormData({ ...formData, receipt: e.target.files?.[0] })
           }
-          className="cursor-pointer"
+          className="cursor-pointer w-full"
         />
         <p className="text-sm text-gray-500">
           Sila muat naik resit atau bukti pembayaran (Gambar atau PDF)
