@@ -128,21 +128,22 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <FormFields formData={formData} setFormData={setFormData} />
-      <div className="flex justify-between items-center space-x-4">
+      <div className="flex flex-col space-y-3">
+        <Button
+          type="submit"
+          className="bg-primary hover:bg-primary-hover text-primary-foreground h-12 text-lg font-medium w-full sm:w-auto"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Sedang dihantar..." : "Hantar"}
+        </Button>
         <Button
           type="button"
           variant="outline"
           onClick={handleSyncAllToGDrive}
           disabled={isSyncing}
+          className="text-sm"
         >
           {isSyncing ? "Sedang memuat naik..." : "Muat Naik Semua Resit ke Google Drive"}
-        </Button>
-        <Button
-          type="submit"
-          className="bg-primary hover:bg-primary-hover text-primary-foreground"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "Sedang dihantar..." : "Hantar"}
         </Button>
       </div>
     </form>
