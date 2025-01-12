@@ -18,10 +18,13 @@ export function ExportButton({ transactions }: ExportButtonProps) {
       "Kategori",
       "Jumlah (RM)",
       "Kaedah Pembayaran",
-      "Link Resit",  // Added new column for receipt URL
+      "Link Resit",
     ].join(",");
 
     const csvRows = transactions.map((t) => {
+      // Ensure the receipt_url is included, use empty string if undefined
+      const receiptUrl = t.receipt_url || "";
+      
       return [
         t.name,
         t.date,
@@ -31,7 +34,7 @@ export function ExportButton({ transactions }: ExportButtonProps) {
         t.category,
         Number(t.amount).toFixed(2),
         t.paymentMethod,
-        t.receipt_url || "",  // Added receipt URL to the CSV data
+        receiptUrl,  // Include the receipt URL in the CSV
       ]
         .map((value) => `"${value}"`)
         .join(",");
