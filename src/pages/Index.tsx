@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
-import { ExpenseForm, ExpenseData } from "@/components/ExpenseForm";
-import { TransactionHistory } from "@/components/TransactionHistory";
-import { PettyCashTopUp } from "@/components/PettyCashTopUp";
-import { TopUpHistory } from "@/components/TopUpHistory";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ExpenseData } from "@/components/expense/types";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BalanceDisplay } from "@/components/BalanceDisplay";
 import { DailySummary } from "@/components/DailySummary";
 import { ExportButton } from "@/components/ExportButton";
-import { Leaf } from "lucide-react";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { TopUpSection } from "@/components/dashboard/TopUpSection";
+import { ExpenseSection } from "@/components/dashboard/ExpenseSection";
+import { HistorySection } from "@/components/dashboard/HistorySection";
 
 const Index = () => {
   const queryClient = useQueryClient();
@@ -30,7 +28,6 @@ const Index = () => {
         throw error;
       }
       
-      // Transform the data to match ExpenseData interface
       return (data || []).map(expense => ({
         name: expense.name,
         date: expense.date,
@@ -40,7 +37,7 @@ const Index = () => {
         category: expense.category,
         amount: Number(expense.amount),
         paymentMethod: expense.payment_method,
-        receipt_url: expense.receipt_url || "", // Include receipt_url in the transformed data
+        receipt_url: expense.receipt_url || "",
         customPurpose: expense.purpose === "other" ? expense.purpose : undefined,
         customCategory: expense.category === "other" ? expense.category : undefined,
       }));
@@ -84,6 +81,7 @@ const Index = () => {
         category: data.category === "other" ? data.customCategory : data.category,
         amount: data.amount,
         payment_method: data.paymentMethod,
+        receipt_url: data.receipt_url,
       });
 
       if (error) throw error;
@@ -127,40 +125,12 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Leaf className="w-6 h-6 text-green-600" />
-            <h1 className="text-2xl font-bold text-gray-800">Rekod Ladang GMP</h1>
-          </div>
-          <BalanceDisplay balance={balance} />
-        </div>
-
+        <DashboardHeader balance={balance} />
         <DailySummary transactions={transactions} balance={balance} />
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Tambah Baki Petty Cash</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PettyCashTopUp onTopUp={handleTopUp} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Tambah Rekod Baru</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ExpenseForm currentBalance={balance} onSubmit={handleExpenseSubmit} />
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <TopUpHistory topUps={topUps} />
-          <TransactionHistory transactions={transactions} />
-        </div>
-
-        {/* Export button moved to bottom */}
+        <TopUpSection onTopUp={handleTopUp} />
+        <ExpenseSection balance={balance} onSubmit={handleExpenseSubmit} />
+        <HistorySection topUps={topUps} transactions={transactions} />
+        
         <div className="fixed bottom-4 right-4 z-10">
           <ExportButton transactions={transactions} />
         </div>
