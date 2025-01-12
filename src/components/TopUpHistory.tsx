@@ -24,8 +24,8 @@ export function TopUpHistory({ topUps }: TopUpHistoryProps) {
                   + RM {topUp.amount.toFixed(2)}
                 </p>
               </div>
-              {topUp.notes && (
-                <p className="text-sm text-gray-600">{topUp.notes}</p>
+              {topUp.notes && topUp.notes.trim() !== "" && (
+                <p className="text-sm text-gray-600">Nota: {topUp.notes}</p>
               )}
             </div>
           ))}
