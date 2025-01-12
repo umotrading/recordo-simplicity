@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 interface PettyCashTopUpProps {
@@ -16,6 +17,7 @@ export interface TopUpData {
 export function PettyCashTopUp({ onTopUp }: PettyCashTopUpProps) {
   const [amount, setAmount] = useState<number>(0);
   const [date, setDate] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +28,7 @@ export function PettyCashTopUp({ onTopUp }: PettyCashTopUpProps) {
     onTopUp(amount, date);
     setAmount(0);
     setDate("");
+    setNotes("");
     toast.success("Baki berjaya ditambah");
   };
 
@@ -52,6 +55,16 @@ export function PettyCashTopUp({ onTopUp }: PettyCashTopUpProps) {
             onChange={(e) => setDate(e.target.value)}
           />
         </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="topup-notes">Nota</Label>
+        <Textarea
+          id="topup-notes"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Masukkan nota tambahan di sini..."
+          className="resize-none"
+        />
       </div>
       <div className="flex justify-end">
         <Button type="submit" className="bg-primary hover:bg-primary-hover">
