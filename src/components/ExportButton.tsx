@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
-import { ExpenseData } from "./ExpenseForm";
+import { ExpenseData } from "./expense/types";
 
 interface ExportButtonProps {
   transactions: ExpenseData[];
@@ -19,11 +19,13 @@ export function ExportButton({ transactions }: ExportButtonProps) {
       "Jumlah (RM)",
       "Kaedah Pembayaran",
       "Link Resit",
+      "Nota",  // Added notes header
     ].join(",");
 
     const csvRows = transactions.map((t) => {
-      // Ensure the receipt_url is included, use empty string if undefined
+      // Ensure the receipt_url and notes are included, use empty string if undefined
       const receiptUrl = t.receipt_url || "";
+      const notes = t.notes || "";  // Added notes field
       
       return [
         t.name,
@@ -34,7 +36,8 @@ export function ExportButton({ transactions }: ExportButtonProps) {
         t.category,
         Number(t.amount).toFixed(2),
         t.paymentMethod,
-        receiptUrl,  // Include the receipt URL in the CSV
+        receiptUrl,
+        notes,  // Include the notes in the CSV
       ]
         .map((value) => `"${value}"`)
         .join(",");
