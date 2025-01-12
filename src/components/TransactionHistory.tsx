@@ -1,19 +1,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExpenseData } from "./ExpenseForm";
-import { ExternalLink, Pencil, Trash2 } from "lucide-react";
-import { Button } from "./ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { FormFields } from "./expense/FormFields";
+import { TransactionItem } from "./transaction/TransactionItem";
+import { EditDialog } from "./transaction/EditDialog";
+import { DeleteDialog } from "./transaction/DeleteDialog";
 
 interface TransactionHistoryProps {
   transactions: ExpenseData[];
@@ -49,7 +41,6 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
       if (error) throw error;
 
       toast.success("Rekod berjaya dipadam");
-      // Refresh the page to update the list
       window.location.reload();
     } catch (error) {
       console.error("Error deleting transaction:", error);
@@ -81,7 +72,6 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
 
       toast.success("Rekod berjaya dikemaskini");
       setIsEditDialogOpen(false);
-      // Refresh the page to update the list
       window.location.reload();
     } catch (error) {
       console.error("Error updating transaction:", error);
@@ -98,87 +88,12 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
         <CardContent>
           <div className="space-y-4">
             {transactions.map((transaction, index) => (
-              <div
+              <TransactionItem
                 key={index}
-                className="flex flex-col p-4 bg-secondary rounded-lg space-y-2"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium text-lg">{transaction.vendor || "Tiada Vendor"}</p>
-                    <p className="text-sm text-gray-500">Direkod oleh: {transaction.name}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg">RM {transaction.amount.toFixed(2)}</p>
-                    <p className="text-sm text-gray-500">
-                      {transaction.paymentMethod === 'cash' ? 'Tunai' : 
-                        transaction.paymentMethod === 'transfer' ? 'Pemindahan Bank' : 'Kad Kredit/Debit'}
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <p className="text-gray-500">Tarikh:</p>
-                    <p>{transaction.date}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">No. Invoice:</p>
-                    <p>{transaction.invoiceNo || "Tiada"}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Tujuan:</p>
-                    <p>{transaction.purpose === 'farm_goods' ? 'Belian Barang Ladang' :
-                        transaction.purpose === 'pesticides' ? 'Belian Racun' :
-                        transaction.purpose === 'fertilizer' ? 'Belian Baja' :
-                        transaction.purpose === 'wages' ? 'Upah Pekerja' :
-                        transaction.purpose === 'machinery' ? 'Sewa Jentera/Lori' :
-                        transaction.purpose === 'transport' ? 'Transport' :
-                        transaction.customPurpose || 'Lain-lain'}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Kategori:</p>
-                    <p>{transaction.category === 'durian' ? 'Projek Durian' :
-                        transaction.category === 'pumpkin' ? 'Projek Labu' :
-                        transaction.category === 'office' ? 'Pengurusan Pejabat' :
-                        transaction.category === 'farm' ? 'Pengurusan Ladang' :
-                        transaction.customCategory || 'Lain-lain'}</p>
-                  </div>
-                </div>
-
-                {transaction.receipt_url && (
-                  <a 
-                    href={transaction.receipt_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 mt-2"
-                  >
-                    <ExternalLink size={16} />
-                    Lihat Resit
-                  </a>
-                )}
-
-                <div className="flex justify-end gap-2 mt-2">
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    onClick={() => handleEdit(transaction)}
-                    className="flex items-center gap-1 h-7 px-2 text-xs"
-                  >
-                    <Pencil size={12} />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="xs"
-                    onClick={() => handleDeleteClick(transaction)}
-                    disabled={isDeleting}
-                    className="flex items-center gap-1 h-7 px-2 text-xs"
-                  >
-                    <Trash2 size={12} />
-                    Padam
-                  </Button>
-                </div>
-              </div>
+                transaction={transaction}
+                onEdit={handleEdit}
+                onDelete={handleDeleteClick}
+              />
             ))}
             {transactions.length === 0 && (
               <p className="text-center text-gray-500">Tiada transaksi</p>
@@ -187,46 +102,20 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
         </CardContent>
       </Card>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Kemaskini Rekod</DialogTitle>
-          </DialogHeader>
-          {editingTransaction && (
-            <FormFields
-              formData={editingTransaction}
-              setFormData={(data) => setEditingTransaction(data)}
-            />
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Batal
-            </Button>
-            <Button onClick={() => editingTransaction && handleUpdate(editingTransaction)}>
-              Simpan
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EditDialog
+        isOpen={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        transaction={editingTransaction}
+        onUpdate={handleUpdate}
+        setTransaction={setEditingTransaction}
+      />
 
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Padam Rekod</DialogTitle>
-            <DialogDescription>
-              Adakah anda pasti untuk memadam rekod ini? Tindakan ini tidak boleh dibatalkan.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Batal
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-              Padam
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteDialog
+        isOpen={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onDelete={handleDelete}
+        isDeleting={isDeleting}
+      />
     </>
   );
 }
