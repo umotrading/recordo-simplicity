@@ -40,6 +40,7 @@ const Index = () => {
         category: expense.category,
         amount: Number(expense.amount),
         paymentMethod: expense.payment_method,
+        receipt_url: expense.receipt_url || "", // Include receipt_url in the transformed data
         customPurpose: expense.purpose === "other" ? expense.purpose : undefined,
         customCategory: expense.category === "other" ? expense.category : undefined,
       }));

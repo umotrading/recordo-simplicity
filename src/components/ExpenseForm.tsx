@@ -31,6 +31,8 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
     setIsSubmitting(true);
     try {
       let receipt_url = null;
+      let drive_url = null;
+      
       if (formData.receipt) {
         const fileExt = formData.receipt.name.split('.').pop();
         const fileName = `${crypto.randomUUID()}.${fileExt}`;
@@ -61,6 +63,7 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
             toast.error("Gagal memuat naik ke Google Drive");
           } else {
             console.log('Successfully uploaded to Google Drive:', response.data);
+            drive_url = response.data.webViewLink; // Store the Google Drive URL
             toast.success("Resit berjaya dimuat naik ke Google Drive");
           }
         } catch (error) {
@@ -73,7 +76,7 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
         ...formData,
         purpose: formData.purpose === "other" ? formData.customPurpose || "Lain-lain" : formData.purpose,
         category: formData.category === "other" ? formData.customCategory || "Lain-lain" : formData.category,
-        receipt_url,
+        receipt_url: drive_url || receipt_url, // Prioritize Google Drive URL
       };
 
       onSubmit(submissionData);
