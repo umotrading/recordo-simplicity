@@ -10,6 +10,7 @@ interface PettyCashTopUpProps {
 }
 
 export interface TopUpData {
+  id: string;
   amount: number;
   date: string;
   notes?: string;

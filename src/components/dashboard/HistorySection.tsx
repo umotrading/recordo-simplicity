@@ -5,12 +5,13 @@ import { ExpenseData } from "@/components/expense/types";
 interface HistorySectionProps {
   topUps: any[];
   transactions: ExpenseData[];
+  onDeleteTopUp: (topUpId: string) => void;
 }
 
-export function HistorySection({ topUps, transactions }: HistorySectionProps) {
+export function HistorySection({ topUps, transactions, onDeleteTopUp }: HistorySectionProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <TopUpHistory topUps={topUps} />
+      <TopUpHistory topUps={topUps} onDelete={onDeleteTopUp} />
       <TransactionHistory transactions={transactions} />
     </div>
   );

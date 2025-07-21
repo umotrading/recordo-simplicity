@@ -114,12 +114,35 @@ const Index = () => {
     },
   });
 
+  // Delete top-up mutation
+  const deleteTopUpMutation = useMutation({
+    mutationFn: async (topUpId: string) => {
+      const { error } = await supabase
+        .from("top_ups")
+        .delete()
+        .eq("id", topUpId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["topUps"] });
+      toast.success("Rekod berjaya dipadam");
+    },
+    onError: () => {
+      toast.error("Ralat semasa memadam rekod");
+    },
+  });
+
   const handleExpenseSubmit = (data: ExpenseData) => {
     addExpenseMutation.mutate(data);
   };
 
   const handleTopUp = (amount: number, date: string, notes: string) => {
     addTopUpMutation.mutate({ amount, date, notes });
+  };
+
+  const handleDeleteTopUp = (topUpId: string) => {
+    deleteTopUpMutation.mutate(topUpId);
   };
 
   return (
@@ -129,7 +152,7 @@ const Index = () => {
         <DailySummary transactions={transactions} balance={balance} />
         <TopUpSection onTopUp={handleTopUp} />
         <ExpenseSection balance={balance} onSubmit={handleExpenseSubmit} />
-        <HistorySection topUps={topUps} transactions={transactions} />
+        <HistorySection topUps={topUps} transactions={transactions} onDeleteTopUp={handleDeleteTopUp} />
         
         <div className="fixed bottom-4 right-4 z-10">
           <ExportButton transactions={transactions} topUps={topUps} />
