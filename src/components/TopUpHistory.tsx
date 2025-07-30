@@ -83,7 +83,13 @@ export function TopUpHistory({ topUps, onDelete }: TopUpHistoryProps) {
                         className="flex flex-col p-4 bg-secondary rounded-lg space-y-2"
                       >
                         <div className="flex justify-between items-center">
-                          <p className="text-sm text-gray-500">{topUp.date}</p>
+                          <p className="text-sm text-gray-500">
+                            {new Date(topUp.date).toLocaleDateString('ms-MY', { 
+                              year: 'numeric', 
+                              month: 'short', 
+                              day: 'numeric' 
+                            })}
+                          </p>
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-green-600">
                               + RM {topUp.amount.toFixed(2)}
