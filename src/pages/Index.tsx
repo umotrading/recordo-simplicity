@@ -3,6 +3,9 @@ import { ExpenseData } from "@/components/expense/types";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 import { DailySummary } from "@/components/DailySummary";
 import { ExportButton } from "@/components/ExportButton";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -11,15 +14,23 @@ import { ExpenseSection } from "@/components/dashboard/ExpenseSection";
 import { HistorySection } from "@/components/dashboard/HistorySection";
 
 const Index = () => {
+  const { user, signOut } = useAuth();
   const queryClient = useQueryClient();
   const [balance, setBalance] = useState(0);
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Berjaya log keluar");
+  };
 
   const { data: transactions = [] } = useQuery({
     queryKey: ["expenses"],
     queryFn: async () => {
+      if (!user) return [];
       const { data, error } = await supabase
         .from("expenses")
         .select("*")
+        .eq('user_id', user.id)
         .order("date", { ascending: false });
       
       if (error) {
@@ -41,15 +52,18 @@ const Index = () => {
         customCategory: expense.category === "other" ? expense.category : undefined,
       }));
     },
+    enabled: !!user,
   });
 
   // Fetch top-ups
   const { data: topUps = [] } = useQuery({
     queryKey: ["topUps"],
     queryFn: async () => {
+      if (!user) return [];
       const { data, error } = await supabase
         .from("top_ups")
         .select("*")
+        .eq('user_id', user.id)
         .order("date", { ascending: false });
       
       if (error) {
@@ -59,6 +73,7 @@ const Index = () => {
       
       return data || [];
     },
+    enabled: !!user,
   });
 
   // Calculate balance
@@ -70,7 +85,7 @@ const Index = () => {
 
   // Add expense mutation
   const addExpenseMutation = useMutation({
-    mutationFn: async (data: ExpenseData) => {
+    mutationFn: async (data: ExpenseData & { user_id: string }) => {
       const { error } = await supabase.from("expenses").insert({
         name: data.name,
         date: data.date,
@@ -81,6 +96,7 @@ const Index = () => {
         amount: data.amount,
         payment_method: data.paymentMethod,
         receipt_url: data.receipt_url,
+        user_id: data.user_id,
       });
 
       if (error) throw error;
@@ -96,11 +112,12 @@ const Index = () => {
 
   // Add top-up mutation
   const addTopUpMutation = useMutation({
-    mutationFn: async (data: { amount: number; date: string; notes: string }) => {
+    mutationFn: async (data: { amount: number; date: string; notes: string; user_id: string }) => {
       const { error } = await supabase.from("top_ups").insert({
         amount: data.amount,
         date: data.date,
         notes: data.notes,
+        user_id: data.user_id,
       });
 
       if (error) throw error;
@@ -134,11 +151,13 @@ const Index = () => {
   });
 
   const handleExpenseSubmit = (data: ExpenseData) => {
-    addExpenseMutation.mutate(data);
+    if (!user) return;
+    addExpenseMutation.mutate({ ...data, user_id: user.id });
   };
 
   const handleTopUp = (amount: number, date: string, notes: string) => {
-    addTopUpMutation.mutate({ amount, date, notes });
+    if (!user) return;
+    addTopUpMutation.mutate({ amount, date, notes, user_id: user.id });
   };
 
   const handleDeleteTopUp = (topUpId: string) => {
@@ -148,7 +167,18 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        <DashboardHeader balance={balance} />
+        <div className="flex justify-between items-center">
+          <DashboardHeader balance={balance} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSignOut}
+            className="flex items-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Log Keluar
+          </Button>
+        </div>
         <DailySummary transactions={transactions} balance={balance} />
         <TopUpSection onTopUp={handleTopUp} />
         <ExpenseSection balance={balance} onSubmit={handleExpenseSubmit} />

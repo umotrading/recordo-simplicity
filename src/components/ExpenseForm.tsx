@@ -4,10 +4,12 @@ import { toast } from "sonner";
 import { FormFields } from "./expense/FormFields";
 import { ExpenseData, ExpenseFormProps } from "./expense/types";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export type { ExpenseData };
 
 export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<ExpenseData>({
     name: "",
     date: "",
@@ -33,13 +35,14 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
       let receipt_url = null;
       let drive_url = null;
       
-      if (formData.receipt) {
+      if (formData.receipt && user) {
         const fileExt = formData.receipt.name.split('.').pop();
         const fileName = `${crypto.randomUUID()}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
         
         const { error: uploadError, data } = await supabase.storage
           .from('receipts')
-          .upload(fileName, formData.receipt);
+          .upload(filePath, formData.receipt);
 
         if (uploadError) {
           toast.error("Gagal memuat naik resit");
@@ -48,7 +51,7 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
 
         const { data: { publicUrl } } = supabase.storage
           .from('receipts')
-          .getPublicUrl(fileName);
+          .getPublicUrl(filePath);
 
         receipt_url = publicUrl;
 
