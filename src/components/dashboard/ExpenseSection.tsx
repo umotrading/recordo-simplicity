@@ -11,7 +11,7 @@ export function ExpenseSection({ balance, onSubmit }: ExpenseSectionProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Tambah Rekod Baru</CardTitle>
+        <CardTitle>TAMBAH PERBELANJAAN/TUNTUTAN BARU</CardTitle>
       </CardHeader>
       <CardContent>
         <ExpenseForm currentBalance={balance} onSubmit={onSubmit} />
