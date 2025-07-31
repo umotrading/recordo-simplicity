@@ -24,9 +24,10 @@ const Index = () => {
   };
 
   const { data: transactions = [] } = useQuery({
-    queryKey: ["expenses"],
+    queryKey: ["expenses", user?.id],
     queryFn: async () => {
       if (!user) return [];
+      console.log("Fetching expenses for user:", user.id);
       const { data, error } = await supabase
         .from("expenses")
         .select("*")
