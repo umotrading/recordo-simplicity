@@ -147,7 +147,7 @@ export type Database = {
           },
         ]
       }
-      "expenses gmp": {
+      expenses: {
         Row: {
           amount: number
           category: string
