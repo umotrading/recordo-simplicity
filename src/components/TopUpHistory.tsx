@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { TopUpData } from "./PettyCashTopUp";
 import { Trash2 } from "lucide-react";
+import { DeleteDialog } from "./transaction/DeleteDialog";
 
 interface TopUpHistoryProps {
   topUps: TopUpData[];
@@ -11,6 +12,30 @@ interface TopUpHistoryProps {
 }
 
 export function TopUpHistory({ topUps, onDelete }: TopUpHistoryProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedTopUpId, setSelectedTopUpId] = useState<string>("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteClick = (topUpId: string) => {
+    setSelectedTopUpId(topUpId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedTopUpId) return;
+    
+    setIsDeleting(true);
+    try {
+      await onDelete(selectedTopUpId);
+      setDeleteDialogOpen(false);
+      setSelectedTopUpId("");
+    } catch (error) {
+      console.error("Error deleting top-up:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Group top-ups by month and year
   const groupedTopUps = useMemo(() => {
     const groups: { [key: string]: TopUpData[] } = {};
@@ -97,7 +122,7 @@ export function TopUpHistory({ topUps, onDelete }: TopUpHistoryProps) {
                             <Button
                               variant="destructive"
                               size="sm"
-                              onClick={() => onDelete(topUp.id)}
+                              onClick={() => handleDeleteClick(topUp.id)}
                               className="h-6 w-6 p-0"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -115,6 +140,13 @@ export function TopUpHistory({ topUps, onDelete }: TopUpHistoryProps) {
             ))}
           </Accordion>
         )}
+        
+        <DeleteDialog
+          isOpen={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onDelete={handleConfirmDelete}
+          isDeleting={isDeleting}
+        />
       </CardContent>
     </Card>
   );
