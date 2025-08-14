@@ -24,14 +24,13 @@ const Index = () => {
   };
 
   const { data: transactions = [] } = useQuery({
-    queryKey: ["expenses", user?.id],
+    queryKey: ["expenses"],
     queryFn: async () => {
       if (!user) return [];
-      console.log("Fetching expenses for user:", user.id);
+      console.log("Fetching all expenses");
       const { data, error } = await supabase
         .from("expenses")
         .select("*")
-        .eq('user_id', user.id)
         .order("date", { ascending: false });
       
       if (error) {
@@ -64,7 +63,6 @@ const Index = () => {
       const { data, error } = await supabase
         .from("top_ups")
         .select("*")
-        .eq('user_id', user.id)
         .order("date", { ascending: false });
       
       if (error) {
