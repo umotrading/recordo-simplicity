@@ -39,6 +39,7 @@ const Index = () => {
       }
       
       return (data || []).map(expense => ({
+        id: expense.id,
         name: expense.name,
         date: expense.date,
         invoiceNo: expense.invoice_no || "",
