@@ -4,6 +4,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { ExpenseData } from "./ExpenseForm";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { TransactionItem } from "./transaction/TransactionItem";
 import { EditDialog } from "./transaction/EditDialog";
 import { DeleteDialog } from "./transaction/DeleteDialog";
@@ -13,6 +14,7 @@ interface TransactionHistoryProps {
 }
 
 export function TransactionHistory({ transactions }: TransactionHistoryProps) {
+  const queryClient = useQueryClient();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<ExpenseData | null>(null);
@@ -76,7 +78,7 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
       if (error) throw error;
 
       toast.success("Rekod berjaya dipadam");
-      window.location.reload();
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
     } catch (error) {
       console.error("Error deleting transaction:", error);
       toast.error("Ralat semasa memadam rekod");
@@ -106,8 +108,9 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
       if (error) throw error;
 
       toast.success("Rekod berjaya dikemaskini");
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
       setIsEditDialogOpen(false);
-      window.location.reload();
+      setEditingTransaction(null);
     } catch (error) {
       console.error("Error updating transaction:", error);
       toast.error("Ralat semasa mengemaskini rekod");
