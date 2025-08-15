@@ -71,7 +71,7 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
       const { error } = await supabase
         .from("expenses")
         .delete()
-        .eq("invoice_no", deletingTransaction.invoiceNo);
+        .eq("id", deletingTransaction.id);
 
       if (error) throw error;
 
@@ -101,7 +101,7 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
           amount: updatedData.amount,
           payment_method: updatedData.paymentMethod,
         })
-        .eq("invoice_no", editingTransaction?.invoiceNo);
+        .eq("id", editingTransaction?.id);
 
       if (error) throw error;
 

@@ -1,4 +1,5 @@
 export interface ExpenseData {
+  id?: string;
   name: string;
   date: string;
   invoiceNo: string;
@@ -11,7 +12,7 @@ export interface ExpenseData {
   paymentMethod: string;
   receipt?: File;
   receipt_url?: string;
-  notes?: string;  // Added this line
+  notes?: string;
 }
 
 export interface ExpenseFormProps {
