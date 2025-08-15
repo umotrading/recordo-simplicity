@@ -68,6 +68,9 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
   const handleDelete = async () => {
     if (!deletingTransaction) return;
 
+    console.log("Attempting to delete transaction:", deletingTransaction);
+    console.log("Transaction ID:", deletingTransaction.id);
+    
     setIsDeleting(true);
     try {
       const { error } = await supabase
