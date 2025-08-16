@@ -68,27 +68,42 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
   const handleDelete = async () => {
     if (!deletingTransaction) return;
 
-    console.log("Attempting to delete transaction:", deletingTransaction);
+    console.log("=== DELETE ATTEMPT ===");
+    console.log("Deleting transaction:", deletingTransaction);
     console.log("Transaction ID:", deletingTransaction.id);
+    console.log("ID type:", typeof deletingTransaction.id);
     
     setIsDeleting(true);
     try {
-      const { error } = await supabase
+      console.log("Making delete request to Supabase...");
+      const { data, error, status, statusText } = await supabase
         .from("expenses")
         .delete()
         .eq("id", deletingTransaction.id);
 
-      if (error) throw error;
+      console.log("Supabase response:", { data, error, status, statusText });
 
+      if (error) {
+        console.error("Supabase delete error:", error);
+        throw error;
+      }
+
+      console.log("Delete successful, invalidating queries...");
       toast.success("Rekod berjaya dipadam");
-      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      
+      // Force invalidate and refetch
+      await queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      await queryClient.refetchQueries({ queryKey: ["expenses"] });
+      
+      console.log("Queries invalidated and refetched");
     } catch (error) {
-      console.error("Error deleting transaction:", error);
-      toast.error("Ralat semasa memadam rekod");
+      console.error("=== DELETE ERROR ===", error);
+      toast.error(`Ralat semasa memadam rekod: ${error.message || error}`);
     } finally {
       setIsDeleting(false);
       setIsDeleteDialogOpen(false);
       setDeletingTransaction(null);
+      console.log("=== DELETE COMPLETE ===");
     }
   };
 
