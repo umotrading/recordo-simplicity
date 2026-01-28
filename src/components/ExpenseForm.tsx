@@ -5,6 +5,7 @@ import { FormFields } from "./expense/FormFields";
 import { ExpenseData, ExpenseFormProps } from "./expense/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { compressImage } from "@/lib/imageCompression";
 
 export type { ExpenseData };
 
@@ -36,16 +37,37 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
       let drive_url = null;
       
       if (formData.receipt && user) {
-        const fileExt = formData.receipt.name.split('.').pop();
+        let fileToUpload = formData.receipt;
+        
+        // Compress image if it's larger than 1MB
+        if (formData.receipt.type.startsWith('image/') && formData.receipt.size > 1024 * 1024) {
+          try {
+            console.log('Compressing image before upload...');
+            fileToUpload = await compressImage(formData.receipt, {
+              maxSizeMB: 1,
+              maxWidthOrHeight: 1920,
+              quality: 0.8,
+            });
+            console.log('Compression complete:', fileToUpload.size, 'bytes');
+          } catch (compressError) {
+            console.error('Compression failed, using original:', compressError);
+            // Continue with original file if compression fails
+          }
+        }
+        
+        const fileExt = fileToUpload.name.split('.').pop();
         const fileName = `${crypto.randomUUID()}.${fileExt}`;
         const filePath = `${user.id}/${fileName}`;
         
+        toast.info("Memuat naik resit...");
+        
         const { error: uploadError, data } = await supabase.storage
           .from('receipts')
-          .upload(filePath, formData.receipt);
+          .upload(filePath, fileToUpload);
 
         if (uploadError) {
-          toast.error("Gagal memuat naik resit");
+          console.error('Storage upload error:', uploadError);
+          toast.error("Gagal memuat naik resit ke storage");
           return;
         }
 
@@ -55,23 +77,42 @@ export function ExpenseForm({ currentBalance, onSubmit }: ExpenseFormProps) {
 
         receipt_url = publicUrl;
 
-        // Upload to Google Drive
-        try {
-          const response = await supabase.functions.invoke('upload-to-drive', {
-            body: { fileUrl: publicUrl },
-          });
+        // Upload to Google Drive with retry
+        toast.info("Memuat naik ke Google Drive...");
+        
+        let retries = 0;
+        const maxRetries = 3;
+        let uploadSuccess = false;
+        
+        while (retries < maxRetries && !uploadSuccess) {
+          try {
+            const response = await supabase.functions.invoke('upload-to-drive', {
+              body: { fileUrl: publicUrl },
+            });
 
-          if (response.error) {
-            console.error('Error uploading to Google Drive:', response.error);
-            toast.error("Gagal memuat naik ke Google Drive");
-          } else {
-            console.log('Successfully uploaded to Google Drive:', response.data);
-            drive_url = response.data.webViewLink; // Store the Google Drive URL
-            toast.success("Resit berjaya dimuat naik ke Google Drive");
+            if (response.error) {
+              console.error(`Google Drive upload attempt ${retries + 1} failed:`, response.error);
+              retries++;
+              if (retries < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+              }
+            } else {
+              console.log('Successfully uploaded to Google Drive:', response.data);
+              drive_url = response.data.webViewLink;
+              toast.success("Resit berjaya dimuat naik ke Google Drive");
+              uploadSuccess = true;
+            }
+          } catch (error) {
+            console.error(`Google Drive upload attempt ${retries + 1} error:`, error);
+            retries++;
+            if (retries < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+            }
           }
-        } catch (error) {
-          console.error('Error calling upload-to-drive function:', error);
-          toast.error("Ralat semasa memuat naik ke Google Drive");
+        }
+        
+        if (!uploadSuccess) {
+          toast.warning("Gagal memuat naik ke Google Drive. Resit disimpan di storage.");
         }
       }
 
