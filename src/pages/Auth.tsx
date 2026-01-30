@@ -1,34 +1,87 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { ArrowLeft, Mail } from 'lucide-react';
+
+type Step = 'email' | 'otp';
 
 export default function Auth() {
-  const { user, signIn, signUp, loading } = useAuth();
+  const { user, sendOtp, verifyOtp, loading } = useAuth();
+  const [step, setStep] = useState<Step>('email');
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+
+  // Countdown timer for resend
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
 
   // Redirect if already authenticated
   if (user && !loading) {
     return <Navigate to="/" replace />;
   }
 
-  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSendOtp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!email) {
+      toast.error('Sila masukkan alamat e-mel');
+      return;
+    }
+
     setIsLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
+    try {
+      const { error } = await sendOtp(email);
+      if (error) {
+        if (error.message.includes('rate limit')) {
+          toast.error('Terlalu banyak percubaan. Sila tunggu beberapa minit.');
+        } else {
+          toast.error('Gagal menghantar kod: ' + error.message);
+        }
+      } else {
+        toast.success('Kod OTP telah dihantar ke e-mel anda');
+        setStep('otp');
+        setCountdown(60);
+      }
+    } catch (error) {
+      toast.error('Ralat tidak dijangka berlaku');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    if (otp.length !== 6) {
+      toast.error('Sila masukkan kod 6 digit');
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
-      const { error } = await signIn(email, password);
+      const { error } = await verifyOtp(email, otp);
       if (error) {
-        toast.error('Gagal log masuk: ' + error.message);
+        if (error.message.includes('expired')) {
+          toast.error('Kod telah tamat tempoh. Sila minta kod baru.');
+        } else if (error.message.includes('invalid')) {
+          toast.error('Kod tidak sah. Sila cuba lagi.');
+        } else {
+          toast.error('Gagal mengesahkan kod: ' + error.message);
+        }
       } else {
         toast.success('Berjaya log masuk!');
       }
@@ -39,37 +92,29 @@ export default function Auth() {
     }
   };
 
-  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleResendOtp = async () => {
+    if (countdown > 0) return;
+    
     setIsLoading(true);
-
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const confirmPassword = formData.get('confirmPassword') as string;
-
-    if (password !== confirmPassword) {
-      toast.error('Kata laluan tidak sepadan');
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const { error } = await signUp(email, password);
+      const { error } = await sendOtp(email);
       if (error) {
-        if (error.message.includes('User already registered')) {
-          toast.error('Pengguna telah didaftarkan. Sila log masuk.');
-        } else {
-          toast.error('Gagal mendaftar: ' + error.message);
-        }
+        toast.error('Gagal menghantar kod: ' + error.message);
       } else {
-        toast.success('Pendaftaran berjaya! Sila semak e-mel anda untuk pengesahan.');
+        toast.success('Kod baru telah dihantar');
+        setCountdown(60);
+        setOtp('');
       }
     } catch (error) {
       toast.error('Ralat tidak dijangka berlaku');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleBack = () => {
+    setStep('email');
+    setOtp('');
   };
 
   if (loading) {
@@ -89,79 +134,87 @@ export default function Auth() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Sistem Pengurusan Petty Cash</CardTitle>
           <CardDescription>
-            Log masuk atau daftar untuk mengakses sistem
+            {step === 'email' 
+              ? 'Masukkan e-mel untuk menerima kod pengesahan' 
+              : `Kod telah dihantar ke ${email}`
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Log Masuk</TabsTrigger>
-              <TabsTrigger value="signup">Daftar</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">E-mel</Label>
+          {step === 'email' ? (
+            <form onSubmit={handleSendOtp} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mel</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="signin-email"
-                    name="email"
+                    id="email"
                     type="email"
                     placeholder="nama@contoh.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Kata Laluan</Label>
-                  <Input
-                    id="signin-password"
-                    name="password"
-                    type="password"
-                    required
-                  />
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Menghantar...' : 'Hantar Kod OTP'}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="space-y-6">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleBack}
+                className="mb-2 -ml-2"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Tukar e-mel
+              </Button>
+              
+              <div className="space-y-4">
+                <Label className="block text-center">Masukkan Kod Pengesahan</Label>
+                <div className="flex justify-center">
+                  <InputOTP
+                    maxLength={6}
+                    value={otp}
+                    onChange={(value) => setOtp(value)}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Sedang log masuk...' : 'Log Masuk'}
+              </div>
+
+              <Button type="submit" className="w-full" disabled={isLoading || otp.length !== 6}>
+                {isLoading ? 'Mengesahkan...' : 'Sahkan'}
+              </Button>
+
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={handleResendOtp}
+                  disabled={countdown > 0 || isLoading}
+                  className="text-sm"
+                >
+                  {countdown > 0 
+                    ? `Hantar semula kod (${countdown}s)` 
+                    : 'Hantar semula kod'
+                  }
                 </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">E-mel</Label>
-                  <Input
-                    id="signup-email"
-                    name="email"
-                    type="email"
-                    placeholder="nama@contoh.com"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Kata Laluan</Label>
-                  <Input
-                    id="signup-password"
-                    name="password"
-                    type="password"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Sahkan Kata Laluan</Label>
-                  <Input
-                    id="confirm-password"
-                    name="confirmPassword"
-                    type="password"
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Sedang mendaftar...' : 'Daftar'}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+              </div>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>
