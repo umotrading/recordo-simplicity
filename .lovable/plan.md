@@ -1,92 +1,105 @@
 
+# Pelan Tukar Login kepada Email OTP
 
-# Pelan Pembaikan Upload Resit ke Google Drive
+## Ringkasan Perubahan
 
-## Ringkasan Masalah
-
-Upload resit kerap gagal kerana beberapa isu teknikal dalam edge functions:
-
-1. **Path structure salah** - Fungsi `sync-all-to-drive` tidak mengendalikan subfolder dengan betul
-2. **Tiada timeout handling** - Fail besar boleh menyebabkan timeout
-3. **Tiada retry mechanism** - Jika gagal, tiada percubaan semula automatik
-4. **Tiada progress feedback** - Pengguna tidak tahu status upload
+Menukar sistem pengesahan dari **email + kata laluan** kepada **Email OTP** di mana pengguna:
+1. Masukkan alamat email
+2. Terima kod 6 digit melalui email
+3. Masukkan kod OTP untuk log masuk
 
 ---
 
-## Langkah Pembaikan
+## Langkah Pelaksanaan
 
-### Langkah 1: Perbaiki fungsi `upload-to-drive`
+### Langkah 1: Kemaskini Supabase Dashboard
 
-**Fail:** `supabase/functions/upload-to-drive/index.ts`
+**Lokasi:** Supabase Dashboard > Authentication > Email Templates
 
-Penambahbaikan:
-- Tambah logging yang lebih baik untuk debug
-- Tambah timeout handling untuk fail besar
-- Perbaiki CORS headers yang lengkap
-- Tambah retry logic untuk API Google Drive
+Anda perlu mengemas kini template email OTP dalam Supabase Dashboard dengan HTML template yang anda berikan. Ini dilakukan secara manual dalam dashboard kerana Lovable tidak boleh mengubah setting ini secara automatik.
 
-### Langkah 2: Perbaiki fungsi `sync-all-to-drive`
+### Langkah 2: Kemaskini `useAuth.tsx`
 
-**Fail:** `supabase/functions/sync-all-to-drive/index.ts`
+**Fail:** `src/hooks/useAuth.tsx`
 
-Penambahbaikan:
-- Perbaiki cara list files supaya termasuk subfolder (gunakan recursive listing)
-- Gunakan `supabase.storage.from('receipts').list(folderId)` untuk setiap user folder
-- Tambah batch processing untuk mengelakkan timeout
-- Tambah retry logic
+Perubahan:
+- Buang fungsi `signIn` (email + password)
+- Buang fungsi `signUp` (tidak perlu pendaftaran berasingan dengan OTP)
+- Tambah fungsi `sendOtp(email)` - hantar kod OTP ke email
+- Tambah fungsi `verifyOtp(email, token)` - sahkan kod OTP
 
-### Langkah 3: Tambah pengesahan saiz fail di frontend
+```text
+Fungsi baru:
+sendOtp(email: string) 
+  -> supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true }})
 
-**Fail:** `src/components/expense/form/ReceiptUpload.tsx`
+verifyOtp(email: string, token: string)
+  -> supabase.auth.verifyOtp({ email, token, type: 'email' })
+```
 
-Penambahbaikan:
-- Tambah pengesahan saiz fail maksimum (contoh: 5MB)
-- Tambah automatic image compression sebelum upload
-- Tunjukkan progress upload kepada pengguna
+### Langkah 3: Reka bentuk semula halaman Auth
 
-### Langkah 4: Tambah image compression di frontend
+**Fail:** `src/pages/Auth.tsx`
 
-**Fail:** `src/components/ExpenseForm.tsx`
+Perubahan UI:
+- Buang tab "Log Masuk" dan "Daftar" 
+- Buat flow 2 langkah:
+  - **Langkah 1:** Borang email sahaja + butang "Hantar Kod OTP"
+  - **Langkah 2:** Input 6 digit OTP menggunakan komponen `InputOTP` + butang "Sahkan"
+- Tambah butang "Hantar semula kod" jika perlu
+- Tambah countdown timer (optional)
 
-Penambahbaikan:
-- Compress gambar sebelum upload ke Supabase Storage
-- Kurangkan saiz fail secara automatik untuk mengelakkan timeout
+```text
+UI Flow:
+
+[Langkah 1: Masukkan Email]
+┌─────────────────────────────────┐
+│  Sistem Rekod Ladang GMP        │
+│  ─────────────────────────────  │
+│  E-mel: [________________]      │
+│                                 │
+│  [  Hantar Kod OTP  ]           │
+└─────────────────────────────────┘
+           ↓
+[Langkah 2: Masukkan OTP]
+┌─────────────────────────────────┐
+│  Masukkan Kod Pengesahan        │
+│  Kod telah dihantar ke email    │
+│  ─────────────────────────────  │
+│  [ 1 ][ 2 ][ 3 ][ 4 ][ 5 ][ 6 ] │
+│                                 │
+│  [     Sahkan     ]             │
+│  Hantar semula kod (dalam 60s)  │
+└─────────────────────────────────┘
+```
 
 ---
 
 ## Butiran Teknikal
 
-### A. Perbaikan `sync-all-to-drive` (Langkah 2)
+### A. Fungsi Supabase yang Digunakan
+
+| Fungsi | Kegunaan |
+|--------|----------|
+| `signInWithOtp({ email })` | Hantar kod OTP ke email pengguna |
+| `verifyOtp({ email, token, type: 'email' })` | Sahkan kod OTP dan log masuk |
+
+### B. State Management dalam Auth.tsx
 
 ```text
-Masalah semasa:
-- list() hanya dapat fail di root, bukan dalam subfolder
-- Setiap user mempunyai folder sendiri: {user_id}/
-
-Penyelesaian:
-1. List semua folder di root (ini adalah user_id)
-2. Untuk setiap folder, list semua fail di dalamnya
-3. Proses setiap fail dengan path yang betul
+States yang diperlukan:
+- step: 'email' | 'otp' - langkah semasa
+- email: string - alamat email pengguna
+- isLoading: boolean - status loading
+- countdown: number - masa untuk hantar semula (optional)
 ```
 
-### B. Image Compression (Langkah 3-4)
+### C. Pengendalian Ralat
 
-```text
-Implementasi:
-- Gunakan Canvas API untuk compress gambar
-- Target: < 1MB atau 80% quality
-- Hanya compress jika saiz > 1MB
-- Kekalkan format asal (JPEG/PNG)
-```
-
-### C. Retry Logic
-
-```text
-Implementasi:
-- Maximum 3 percubaan
-- Exponential backoff (1s, 2s, 4s)
-- Log setiap percubaan untuk debug
-```
+- Email tidak sah → "Sila masukkan email yang sah"
+- Kod OTP salah → "Kod tidak sah. Sila cuba lagi."
+- Kod tamat tempoh → "Kod telah tamat tempoh. Sila minta kod baru."
+- Rate limit → "Terlalu banyak percubaan. Sila tunggu beberapa minit."
 
 ---
 
@@ -94,19 +107,27 @@ Implementasi:
 
 | Fail | Jenis Perubahan |
 |------|-----------------|
-| `supabase/functions/upload-to-drive/index.ts` | Tambah retry, logging, CORS fix |
-| `supabase/functions/sync-all-to-drive/index.ts` | Perbaiki recursive listing, tambah retry |
-| `src/components/expense/form/ReceiptUpload.tsx` | Tambah validasi saiz, UI feedback |
-| `src/components/ExpenseForm.tsx` | Tambah image compression |
-| `src/lib/imageCompression.ts` | **Fail baru** - utility untuk compress gambar |
+| `src/hooks/useAuth.tsx` | Tukar fungsi auth kepada OTP |
+| `src/pages/Auth.tsx` | Reka bentuk semula UI untuk flow OTP |
+
+---
+
+## Tindakan Manual Diperlukan
+
+Selepas pelaksanaan, anda perlu:
+
+1. **Kemaskini Email Template dalam Supabase Dashboard:**
+   - Pergi ke Authentication > Email Templates
+   - Pilih "Magic Link" atau "OTP" template
+   - Gantikan dengan HTML template yang anda berikan
+   - Pastikan `{{ .Token }}` ada dalam template untuk paparkan kod OTP
 
 ---
 
 ## Hasil Jangkaan
 
-Selepas pembaikan:
-- Upload resit akan lebih stabil dan jarang gagal
-- Gambar besar akan di-compress secara automatik
-- Pengguna akan dapat melihat progress dan status upload
-- Jika gagal, sistem akan cuba semula secara automatik
-
+Selepas perubahan:
+- Pengguna tidak perlu ingat kata laluan
+- Login lebih selamat dengan kod 6 digit yang tamat tempoh dalam 5 minit
+- Pendaftaran automatik - pengguna baru akan didaftarkan secara automatik
+- UI lebih mudah dan mesra pengguna
